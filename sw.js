@@ -1,7 +1,7 @@
 const CACHE_NAME = 'reminders-v1';
 const urlsToCache = [
-  '/reminder_app.html',
-  '/manifest.json'
+  './reminder_app.html',
+  './manifest.json'
 ];
 
 // Install service worker and cache assets

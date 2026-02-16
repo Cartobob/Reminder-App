@@ -2,7 +2,7 @@
   "name": "Reminders - Minimalist Reminder App",
   "short_name": "Reminders",
   "description": "A beautiful, minimalist reminder app with customizable themes",
-  "start_url": "/reminder_app.html",
+  "start_url": "./reminder_app.html",
   "display": "standalone",
   "background_color": "#1a1a1f",
   "theme_color": "#1a1a1f",
