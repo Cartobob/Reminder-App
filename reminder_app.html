@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a1f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Reminders">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Reminders</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --bg-primary: #1a1a1f;
+            --bg-secondary: #25252d;
+            --bg-tertiary: #2f2f38;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b7b;
+            --accent: #ff6b6b;
+            --accent-hover: #ff5252;
+            --accent-light: rgba(255, 107, 107, 0.15);
+            --border: #3a3a44;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Mobile Container */
+        .phone-frame {
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--bg-primary);
+            position: relative;
+        }
+        
+        /* Header */
+        .header {
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .header h1 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            border: none;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 18px;
+        }
+        
+        .icon-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .icon-btn.active {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            padding: 16px 24px;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            border-radius: 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .tab.active {
+            background: var(--accent);
+            color: white;
+        }
+        
+        /* Reminder List */
+        .reminder-list {
+            padding: 16px 24px;
+            padding-bottom: 100px;
+        }
+        
+        .reminder-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        
+        .reminder-card:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border);
+        }
+        
+        .reminder-card.completed {
+            opacity: 0.5;
+        }
+        
+        .reminder-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            background: transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 2px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .checkbox:hover {
+            border-color: var(--accent);
+        }
+        
+        .checkbox.checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        
+        .checkbox.checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .reminder-content {
+            flex: 1;
+        }
+        
+        .reminder-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+        
+        .reminder-card.completed .reminder-title {
+            text-decoration: line-through;
+        }
+        
+        .reminder-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        
+        .meta-item.time {
+            color: var(--accent);
+            font-weight: 500;
+        }
+        
+        .recurring-badge {
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: var(--accent-light);
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 40px;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+        
+        .empty-state h3 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .empty-state p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            border-radius: 20px;
+            background: var(--accent);
+            border: none;
+            color: white;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 24px var(--shadow);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+        
+        .fab:hover {
+            background: var(--accent-hover);
+            transform: scale(1.05);
+        }
+        
+        .fab:active {
+            transform: scale(0.95);
+        }
+        
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: flex-end;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        /* Modal Content */
+        .modal {
+            width: 100%;
+            max-width: 430px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .modal-header h2 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .close-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--bg-tertiary);
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .close-btn:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            background: var(--bg-tertiary);
+            border: 2px solid transparent;
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--bg-primary);
+        }
+        
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .time-date-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-radius: 12px;
+            background: var(--bg-tertiary);
+        }
+        
+        .toggle-label {
+            font-size: 15px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            background: var(--border);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-switch.active {
+            background: var(--accent);
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            top: 3px;
+            left: 3px;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-switch.active::after {
+            left: 23px;
+        }
+        
+        .recurring-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .recurring-btn {
+            padding: 10px;
+            border-radius: 10px;
+            background: var(--bg-tertiary);
+            border: 2px solid transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .recurring-btn:hover {
+            background: var(--bg-primary);
+        }
+        
+        .recurring-btn.active {
+            background: var(--accent-light);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            background: var(--accent);
+            border: none;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+        
+        .submit-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Settings Modal */
+        .theme-picker {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+        
+        .theme-color {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .theme-color:hover {
+            transform: scale(1.1);
+        }
+        
+        .theme-color.active {
+            border-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .theme-color.active::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        @media (min-width: 431px) {
+            .phone-frame {
+                margin-top: 20px;
+                margin-bottom: 20px;
+                border-radius: 40px;
+                overflow: hidden;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <!-- Header -->
+        <div class="header">
+            <h1 id="headerTitle">Reminders</h1>
+            <div class="header-actions">
+                <button class="icon-btn" id="settingsBtn">⚙️</button>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="active">Active</button>
+            <button class="tab" data-tab="completed">Completed</button>
+        </div>
+        
+        <!-- Reminder List -->
+        <div class="reminder-list" id="reminderList">
+            <!-- Reminders will be inserted here -->
+        </div>
+        
+        <!-- Floating Action Button -->
+        <button class="fab" id="addBtn">+</button>
+    </div>
+    
+    <!-- Add/Edit Reminder Modal -->
+    <div class="modal-overlay" id="reminderModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">New Reminder</h2>
+                <button class="close-btn" id="closeModal">✕</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">What do you need to remember?</label>
+                <input type="text" class="form-input" id="reminderText" placeholder="Buy groceries, call mom...">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">When?</label>
+                <div class="time-date-group">
+                    <input type="date" class="form-input" id="reminderDate">
+                    <input type="time" class="form-input" id="reminderTime">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="toggle-group">
+                    <span class="toggle-label">Recurring</span>
+                    <div class="toggle-switch" id="recurringToggle"></div>
+                </div>
+                <div class="recurring-options" id="recurringOptions" style="display: none;">
+                    <button class="recurring-btn" data-recurring="daily">Daily</button>
+                    <button class="recurring-btn" data-recurring="weekly">Weekly</button>
+                    <button class="recurring-btn" data-recurring="monthly">Monthly</button>
+                </div>
+            </div>
+            
+            <button class="submit-btn" id="saveReminder">Save Reminder</button>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="close-btn" id="closeSettings">✕</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Accent Color Theme</label>
+                <div class="theme-picker">
+                    <div class="theme-color active" data-color="#ff6b6b" style="background: #ff6b6b;"></div>
+                    <div class="theme-color" data-color="#4ecdc4" style="background: #4ecdc4;"></div>
+                    <div class="theme-color" data-color="#a29bfe" style="background: #a29bfe;"></div>
+                    <div class="theme-color" data-color="#feca57" style="background: #feca57;"></div>
+                    <div class="theme-color" data-color="#48dbfb" style="background: #48dbfb;"></div>
+                    <div class="theme-color" data-color="#ff6348" style="background: #ff6348;"></div>
+                    <div class="theme-color" data-color="#1dd1a1" style="background: #1dd1a1;"></div>
+                    <div class="theme-color" data-color="#ff9ff3" style="background: #ff9ff3;"></div>
+                    <div class="theme-color" data-color="#54a0ff" style="background: #54a0ff;"></div>
+                    <div class="theme-color" data-color="#ee5a6f" style="background: #ee5a6f;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // State
+        let reminders = [
+            {
+                id: 1,
+                text: "Team meeting with marketing",
+                date: "2026-02-15",
+                time: "14:00",
+                recurring: "weekly",
+                completed: false
+            },
+            {
+                id: 2,
+                text: "Review quarterly paint sales report",
+                date: "2026-02-14",
+                time: "16:30",
+                recurring: null,
+                completed: false
+            },
+            {
+                id: 3,
+                text: "Call supplier about new primer formula",
+                date: "2026-02-14",
+                time: "10:00",
+                recurring: null,
+                completed: true
+            }
+        ];
+        
+        let currentTab = 'active';
+        let editingId = null;
+        let selectedRecurring = null;
+        
+        // DOM Elements
+        const reminderList = document.getElementById('reminderList');
+        const addBtn = document.getElementById('addBtn');
+        const reminderModal = document.getElementById('reminderModal');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeModal = document.getElementById('closeModal');
+        const closeSettings = document.getElementById('closeSettings');
+        const saveReminder = document.getElementById('saveReminder');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const recurringToggle = document.getElementById('recurringToggle');
+        const recurringOptions = document.getElementById('recurringOptions');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        // Initialize
+        renderReminders();
+        setTodayDate();
+        
+        // Set today's date as default
+        function setTodayDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('reminderDate').value = today;
+            document.getElementById('reminderTime').value = '09:00';
+        }
+        
+        // Render reminders
+        function renderReminders() {
+            const filtered = reminders.filter(r => 
+                currentTab === 'active' ? !r.completed : r.completed
+            );
+            
+            if (filtered.length === 0) {
+                reminderList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">${currentTab === 'active' ? '📝' : '✅'}</div>
+                        <h3>${currentTab === 'active' ? 'No reminders yet' : 'No completed reminders'}</h3>
+                        <p>${currentTab === 'active' ? 'Tap + to add your first reminder' : 'Complete some reminders to see them here'}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            reminderList.innerHTML = filtered.map(r => `
+                <div class="reminder-card ${r.completed ? 'completed' : ''}" data-id="${r.id}">
+                    <div class="reminder-header">
+                        <div class="checkbox ${r.completed ? 'checked' : ''}" data-id="${r.id}"></div>
+                        <div class="reminder-content">
+                            <div class="reminder-title">${r.text}</div>
+                            <div class="reminder-meta">
+                                <span class="meta-item time">🕐 ${formatTime(r.time)} • ${formatDate(r.date)}</span>
+                                ${r.recurring ? `<span class="recurring-badge">${r.recurring}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add click handlers
+            document.querySelectorAll('.checkbox').forEach(cb => {
+                cb.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleComplete(parseInt(cb.dataset.id));
+                });
+            });
+            
+            document.querySelectorAll('.reminder-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    if (!card.classList.contains('completed')) {
+                        editReminder(parseInt(card.dataset.id));
+                    }
+                });
+            });
+        }
+        
+        // Format time
+        function formatTime(time) {
+            const [hours, minutes] = time.split(':');
+            const h = parseInt(hours);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const displayHours = h % 12 || 12;
+            return `${displayHours}:${minutes} ${ampm}`;
+        }
+        
+        // Format date
+        function formatDate(date) {
+            const d = new Date(date + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            if (d.getTime() === today.getTime()) return 'Today';
+            if (d.getTime() === tomorrow.getTime()) return 'Tomorrow';
+            
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        
+        // Toggle complete
+        function toggleComplete(id) {
+            const reminder = reminders.find(r => r.id === id);
+            if (reminder) {
+                reminder.completed = !reminder.completed;
+                renderReminders();
+            }
+        }
+        
+        // Edit reminder
+        function editReminder(id) {
+            const reminder = reminders.find(r => r.id === id);
+            if (!reminder) return;
+            
+            editingId = id;
+            modalTitle.textContent = 'Edit Reminder';
+            document.getElementById('reminderText').value = reminder.text;
+            document.getElementById('reminderDate').value = reminder.date;
+            document.getElementById('reminderTime').value = reminder.time;
+            
+            if (reminder.recurring) {
+                recurringToggle.classList.add('active');
+                recurringOptions.style.display = 'grid';
+                selectedRecurring = reminder.recurring;
+                document.querySelectorAll('.recurring-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.recurring === reminder.recurring);
+                });
+            }
+            
+            reminderModal.classList.add('active');
+        }
+        
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentTab = tab.dataset.tab;
+                document.getElementById('headerTitle').textContent = 
+                    currentTab === 'active' ? 'Reminders' : 'Completed';
+                renderReminders();
+            });
+        });
+        
+        // Open add modal
+        addBtn.addEventListener('click', () => {
+            editingId = null;
+            modalTitle.textContent = 'New Reminder';
+            document.getElementById('reminderText').value = '';
+            setTodayDate();
+            recurringToggle.classList.remove('active');
+            recurringOptions.style.display = 'none';
+            selectedRecurring = null;
+            document.querySelectorAll('.recurring-btn').forEach(btn => btn.classList.remove('active'));
+            reminderModal.classList.add('active');
+        });
+        
+        // Close modals
+        closeModal.addEventListener('click', () => {
+            reminderModal.classList.remove('active');
+        });
+        
+        closeSettings.addEventListener('click', () => {
+            settingsModal.classList.remove('active');
+        });
+        
+        reminderModal.addEventListener('click', (e) => {
+            if (e.target === reminderModal) {
+                reminderModal.classList.remove('active');
+            }
+        });
+        
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                settingsModal.classList.remove('active');
+            }
+        });
+        
+        // Recurring toggle
+        recurringToggle.addEventListener('click', () => {
+            recurringToggle.classList.toggle('active');
+            const isActive = recurringToggle.classList.contains('active');
+            recurringOptions.style.display = isActive ? 'grid' : 'none';
+            if (!isActive) {
+                selectedRecurring = null;
+                document.querySelectorAll('.recurring-btn').forEach(btn => btn.classList.remove('active'));
+            }
+        });
+        
+        // Recurring options
+        document.querySelectorAll('.recurring-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.recurring-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedRecurring = btn.dataset.recurring;
+            });
+        });
+        
+        // Save reminder
+        saveReminder.addEventListener('click', () => {
+            const text = document.getElementById('reminderText').value.trim();
+            const date = document.getElementById('reminderDate').value;
+            const time = document.getElementById('reminderTime').value;
+            
+            if (!text || !date || !time) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (editingId) {
+                const reminder = reminders.find(r => r.id === editingId);
+                reminder.text = text;
+                reminder.date = date;
+                reminder.time = time;
+                reminder.recurring = selectedRecurring;
+            } else {
+                reminders.push({
+                    id: Date.now(),
+                    text,
+                    date,
+                    time,
+                    recurring: selectedRecurring,
+                    completed: false
+                });
+            }
+            
+            renderReminders();
+            reminderModal.classList.remove('active');
+        });
+        
+        // Settings
+        settingsBtn.addEventListener('click', () => {
+            settingsModal.classList.add('active');
+        });
+        
+        // Theme picker
+        document.querySelectorAll('.theme-color').forEach(color => {
+            color.addEventListener('click', () => {
+                document.querySelectorAll('.theme-color').forEach(c => c.classList.remove('active'));
+                color.classList.add('active');
+                
+                const newColor = color.dataset.color;
+                document.documentElement.style.setProperty('--accent', newColor);
+                
+                // Adjust hover color (slightly darker)
+                const rgb = hexToRgb(newColor);
+                const darker = `rgb(${Math.max(0, rgb.r - 20)}, ${Math.max(0, rgb.g - 20)}, ${Math.max(0, rgb.b - 20)})`;
+                document.documentElement.style.setProperty('--accent-hover', darker);
+                
+                // Adjust light color (with transparency)
+                const lighter = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`;
+                document.documentElement.style.setProperty('--accent-light', lighter);
+            });
+        });
+        
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+        
+        // PWA: Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+        
+        // PWA: Local Storage Persistence
+        function saveToStorage() {
+            localStorage.setItem('reminders', JSON.stringify(reminders));
+            localStorage.setItem('currentTheme', getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
+        }
+        
+        function loadFromStorage() {
+            const saved = localStorage.getItem('reminders');
+            if (saved) {
+                reminders = JSON.parse(saved);
+                renderReminders();
+            }
+            
+            const savedTheme = localStorage.getItem('currentTheme');
+            if (savedTheme) {
+                document.documentElement.style.setProperty('--accent', savedTheme);
+                const rgb = hexToRgb(savedTheme);
+                if (rgb) {
+                    const darker = `rgb(${Math.max(0, rgb.r - 20)}, ${Math.max(0, rgb.g - 20)}, ${Math.max(0, rgb.b - 20)})`;
+                    document.documentElement.style.setProperty('--accent-hover', darker);
+                    const lighter = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`;
+                    document.documentElement.style.setProperty('--accent-light', lighter);
+                }
+                
+                document.querySelectorAll('.theme-color').forEach(color => {
+                    color.classList.toggle('active', color.dataset.color === savedTheme);
+                });
+            }
+        }
+        
+        // Load data on startup
+        loadFromStorage();
+        
+        // Save data whenever reminders change
+        const originalToggleComplete = toggleComplete;
+        toggleComplete = function(id) {
+            originalToggleComplete(id);
+            saveToStorage();
+        };
+        
+        const originalSaveClick = saveReminder.onclick;
+        saveReminder.onclick = null;
+        saveReminder.addEventListener('click', function() {
+            const text = document.getElementById('reminderText').value.trim();
+            const date = document.getElementById('reminderDate').value;
+            const time = document.getElementById('reminderTime').value;
+            
+            if (!text || !date || !time) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (editingId) {
+                const reminder = reminders.find(r => r.id === editingId);
+                reminder.text = text;
+                reminder.date = date;
+                reminder.time = time;
+                reminder.recurring = selectedRecurring;
+            } else {
+                reminders.push({
+                    id: Date.now(),
+                    text,
+                    date,
+                    time,
+                    recurring: selectedRecurring,
+                    completed: false
+                });
+            }
+            
+            renderReminders();
+            saveToStorage();
+            reminderModal.classList.remove('active');
+            
+            // Request notification permission
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        });
+        
+        // Save theme changes
+        document.querySelectorAll('.theme-color').forEach(color => {
+            color.addEventListener('click', () => {
+                saveToStorage();
+            });
+        });
+    </script>
+</body>
+</html>
