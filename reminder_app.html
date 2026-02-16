@@ -974,16 +974,20 @@
         // Load data on startup
         loadFromStorage();
         
-        // Save data whenever reminders change
-        const originalToggleComplete = toggleComplete;
-        toggleComplete = function(id) {
-            originalToggleComplete(id);
+        // Save data whenever reminders change (wrap toggleComplete)
+        const originalRenderReminders = renderReminders;
+        renderReminders = function() {
+            originalRenderReminders();
             saveToStorage();
         };
         
+        // Save reminder with notification scheduling
         const originalSaveClick = saveReminder.onclick;
         saveReminder.onclick = null;
-        saveReminder.addEventListener('click', function() {
+        
+        let notificationPermissionRequested = false;
+        
+        saveReminder.addEventListener('click', async function() {
             const text = document.getElementById('reminderText').value.trim();
             const date = document.getElementById('reminderDate').value;
             const time = document.getElementById('reminderTime').value;
@@ -993,32 +997,128 @@
                 return;
             }
             
+            // Request notification permission only once
+            if (!notificationPermissionRequested && 'Notification' in window && Notification.permission === 'default') {
+                const permission = await Notification.requestPermission();
+                notificationPermissionRequested = true;
+                
+                if (permission === 'granted') {
+                    console.log('Notifications enabled!');
+                }
+            }
+            
+            let reminder;
             if (editingId) {
-                const reminder = reminders.find(r => r.id === editingId);
+                reminder = reminders.find(r => r.id === editingId);
                 reminder.text = text;
                 reminder.date = date;
                 reminder.time = time;
                 reminder.recurring = selectedRecurring;
             } else {
-                reminders.push({
+                reminder = {
                     id: Date.now(),
                     text,
                     date,
                     time,
                     recurring: selectedRecurring,
                     completed: false
-                });
+                };
+                reminders.push(reminder);
             }
+            
+            // Schedule notification
+            scheduleNotification(reminder);
             
             renderReminders();
-            saveToStorage();
             reminderModal.classList.remove('active');
-            
-            // Request notification permission
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission();
-            }
         });
+        
+        // Schedule notification function
+        function scheduleNotification(reminder) {
+            if (!('Notification' in window) || Notification.permission !== 'granted') {
+                return;
+            }
+            
+            const reminderDateTime = new Date(`${reminder.date}T${reminder.time}`);
+            const now = new Date();
+            const timeUntilReminder = reminderDateTime.getTime() - now.getTime();
+            
+            // If reminder is in the future, schedule it
+            if (timeUntilReminder > 0) {
+                // Clear any existing timeout for this reminder
+                if (reminder.timeoutId) {
+                    clearTimeout(reminder.timeoutId);
+                }
+                
+                // Schedule notification
+                reminder.timeoutId = setTimeout(() => {
+                    showNotification(reminder);
+                    
+                    // If recurring, schedule next occurrence
+                    if (reminder.recurring && !reminder.completed) {
+                        scheduleNextRecurrence(reminder);
+                    }
+                }, timeUntilReminder);
+                
+                console.log(`Notification scheduled for ${reminder.text} at ${reminder.date} ${reminder.time}`);
+            }
+        }
+        
+        // Show notification
+        function showNotification(reminder) {
+            if (Notification.permission === 'granted') {
+                const notification = new Notification('⏰ Reminder', {
+                    body: reminder.text,
+                    icon: 'icon-192.png',
+                    badge: 'icon-192.png',
+                    vibrate: [200, 100, 200],
+                    tag: `reminder-${reminder.id}`,
+                    requireInteraction: true
+                });
+                
+                notification.onclick = function() {
+                    window.focus();
+                    notification.close();
+                };
+                
+                // Auto-close after 30 seconds
+                setTimeout(() => notification.close(), 30000);
+            }
+        }
+        
+        // Schedule next recurring reminder
+        function scheduleNextRecurrence(reminder) {
+            const currentDate = new Date(`${reminder.date}T${reminder.time}`);
+            let nextDate = new Date(currentDate);
+            
+            switch (reminder.recurring) {
+                case 'daily':
+                    nextDate.setDate(nextDate.getDate() + 1);
+                    break;
+                case 'weekly':
+                    nextDate.setDate(nextDate.getDate() + 7);
+                    break;
+                case 'monthly':
+                    nextDate.setMonth(nextDate.getMonth() + 1);
+                    break;
+            }
+            
+            reminder.date = nextDate.toISOString().split('T')[0];
+            scheduleNotification(reminder);
+            saveToStorage();
+        }
+        
+        // Re-schedule all pending notifications on app load
+        function reScheduleAllNotifications() {
+            reminders.forEach(reminder => {
+                if (!reminder.completed) {
+                    scheduleNotification(reminder);
+                }
+            });
+        }
+        
+        // Call this after loading from storage
+        setTimeout(reScheduleAllNotifications, 1000);
         
         // Save theme changes
         document.querySelectorAll('.theme-color').forEach(color => {
